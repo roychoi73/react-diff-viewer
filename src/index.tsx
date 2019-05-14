@@ -93,12 +93,11 @@ class DiffViewer extends React.Component<IReactDiffViewerProps, IReactDiffViewer
     let leftLineNumber = 0
     let rightLineNumber = 0
 
+
     return () => diffArray.map((obj: diff.IDiffResult, i) => {
       return <React.Fragment key={i}>
         {
-          obj.value.split('\n')
-            .filter(ch => ch.length > 0)
-            .map((ch, num) => {
+            obj.value.replace(/[\r\n]$/, '').split('\n').map((ch, num) => {
               if (!obj.added && !obj.removed) {
                 rightLineNumber = rightLineNumber + 1
                 leftLineNumber = leftLineNumber + 1
@@ -128,11 +127,13 @@ class DiffViewer extends React.Component<IReactDiffViewerProps, IReactDiffViewer
               } else if (obj.removed && diffArray[i + 1] && !diffArray[i + 1].added) {
                 leftLineNumber = leftLineNumber + 1
                 leftContent = ch
+              } else if (obj.removed && !diffArray[i + 1]) {
+                leftLineNumber = leftLineNumber + 1
+                leftContent = ch
               } else if (obj.removed && diffArray[i + 1] && diffArray[i + 1].added) {
                 leftLineNumber = leftLineNumber + 1
                 const nextVal = diffArray[i + 1].value
-                  .split('\n')
-                  .filter(Boolean)[num]
+                  .split('\n')[num]
                 leftContent = (nextVal && !this.props.disableWordDiff)
                   ? wordDiff(ch, nextVal, 'added', styles, this.props.renderContent)
                   : ch
@@ -172,16 +173,14 @@ class DiffViewer extends React.Component<IReactDiffViewerProps, IReactDiffViewer
     let rightLineNumber = 0
     return () => {
       return diffArray.map((diffObj, i) => {
-        return diffObj.value.split('\n')
-          .filter(ch => ch.length > 0)
+        return diffObj.value.replace(/\n$/, '').split('\n')
           .map((ch, num) => {
             let content
             if (diffObj.added) {
               rightLineNumber = rightLineNumber + 1
               if (diffArray[i - 1] && diffArray[i - 1].removed) {
                 const preValue = diffArray[i - 1].value
-                .split('\n')
-                .filter(Boolean)[num]
+                .split('\n')[num]
                 content = (preValue && !this.props.disableWordDiff) ? wordDiff(preValue, ch, 'removed', styles, this.props.renderContent) : ch
               } else {
                 content = ch
@@ -190,8 +189,7 @@ class DiffViewer extends React.Component<IReactDiffViewerProps, IReactDiffViewer
               leftLineNumber = leftLineNumber + 1
               if (diffArray[i + 1] && diffArray[i + 1].added) {
                 const nextVal = diffArray[i + 1].value
-                .split('\n')
-                .filter(Boolean)[num]
+                .split('\n')[num]
                 content = (nextVal && !this.props.disableWordDiff) ? wordDiff(ch, nextVal, 'added', styles, this.props.renderContent) : ch
               } else {
                 content = ch
@@ -236,7 +234,7 @@ class DiffViewer extends React.Component<IReactDiffViewerProps, IReactDiffViewer
     const newStyles: any = this.computeStyles(this.props.styles)
 
     const diffArray = diff.diffLines(oldValue, newValue, {
-      newlineIsToken: true,
+      newlineIsToken: false,
       ignoreWhitespace: false,
       ignoreCase: false,
     })
